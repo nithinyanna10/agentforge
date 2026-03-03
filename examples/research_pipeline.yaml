@@ -1,0 +1,25 @@
+name: research_and_write
+steps:
+  - name: research
+    agent: researcher
+    input_map: {}
+    depends_on: []
+  - name: outline
+    agent: planner
+    input_map:
+      research_findings: research
+    depends_on:
+      - research
+  - name: draft
+    agent: writer
+    input_map:
+      outline: outline
+      research: research
+    depends_on:
+      - outline
+  - name: review
+    agent: reviewer
+    input_map:
+      draft: draft
+    depends_on:
+      - draft
