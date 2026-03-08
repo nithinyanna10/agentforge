@@ -8,7 +8,7 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from agentforge.core.agent import Agent, AgentResult
-from agentforge.core.pipeline import Pipeline
+from agentforge.core.pipeline import Pipeline, PipelineStep
 from agentforge.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -161,7 +161,9 @@ class Orchestrator:
 
                 task_input = self._map_inputs(step.input_map, context)
                 agent = self.get_agent(step.agent_name)
-                coros.append(agent.run(task_input))
+                coros.append(
+                    self._run_step_with_retry(agent, task_input, step)
+                )
                 layer_names.append(step.name)
 
             layer_results = await asyncio.gather(*coros)
@@ -180,6 +182,44 @@ class Orchestrator:
         )
 
     # -- helpers -------------------------------------------------------------
+
+    async def _run_step_with_retry(
+        self,
+        agent: Agent,
+        task_input: str,
+        step: PipelineStep,
+    ) -> AgentResult:
+        """Run a single pipeline step with optional timeout and retries."""
+        last_error: Exception | None = None
+        attempts = 1 + max(0, step.retries)
+
+        for attempt in range(attempts):
+            try:
+                if step.timeout_seconds is not None:
+                    return await asyncio.wait_for(
+                        agent.run(task_input),
+                        timeout=step.timeout_seconds,
+                    )
+                return await agent.run(task_input)
+            except asyncio.TimeoutError as e:
+                last_error = e
+                logger.warning(
+                    "Step %r attempt %d timed out after %ss",
+                    step.name,
+                    attempt + 1,
+                    step.timeout_seconds,
+                )
+            except Exception as e:
+                last_error = e
+                logger.warning(
+                    "Step %r attempt %d failed: %s",
+                    step.name,
+                    attempt + 1,
+                    e,
+                )
+        raise RuntimeError(
+            f"Step {step.name!r} failed after {attempts} attempt(s)"
+        ) from last_error
 
     @staticmethod
     def _map_inputs(input_map: dict[str, str], context: dict[str, Any]) -> str:
