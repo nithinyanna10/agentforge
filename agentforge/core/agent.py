@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from agentforge.core.memory import MemoryStore
+from agentforge.core.run_store import RunStore
 from agentforge.llm.base import BaseLLMProvider, LLMResponse, Message, Role, ToolCall
 from agentforge.tools.base import Tool, ToolResult
 from agentforge.utils.logging import get_logger
@@ -86,11 +87,13 @@ class Agent:
         llm: BaseLLMProvider,
         tools: list[Tool] | None = None,
         memory: MemoryStore | None = None,
+        run_store: RunStore | None = None,
     ) -> None:
         self.config = config
         self.llm = llm
         self.tools: dict[str, Tool] = {t.name: t for t in (tools or [])}
         self.memory = memory
+        self.run_store = run_store
 
         # Event hooks — callers can replace these after construction.
         self.on_thinking: OnThinkingHook | None = None
@@ -159,6 +162,17 @@ class Agent:
         if self.memory:
             await self.memory.add(f"task: {task}", {"role": "user"})
             await self.memory.add(f"answer: {answer}", {"role": "assistant", "agent": self.name})
+
+        if self.run_store:
+            await self.run_store.save(
+                agent_name=self.name,
+                task=task,
+                answer=answer,
+                tool_calls=[r.model_dump() for r in tool_records],
+                thinking_steps=thinking_steps,
+                duration_seconds=elapsed,
+                metadata=result.metadata,
+            )
 
         await self._fire_result(result)
         return result
