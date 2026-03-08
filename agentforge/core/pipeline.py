@@ -37,6 +37,8 @@ class PipelineStep(BaseModel):
     input_map: dict[str, str] = Field(default_factory=dict)
     depends_on: list[str] = Field(default_factory=list)
     condition: Callable[[dict[str, Any]], bool] | None = Field(default=None, exclude=True)
+    retries: int = Field(default=0, ge=0, le=10)
+    timeout_seconds: float | None = Field(default=None, gt=0, le=3600)
 
     model_config = {"arbitrary_types_allowed": True}
 
@@ -147,6 +149,8 @@ class Pipeline:
                     agent_name=entry.get("agent", entry.get("agent_name", "")),
                     input_map=entry.get("input_map", {}),
                     depends_on=entry.get("depends_on", []),
+                    retries=entry.get("retries", 0),
+                    timeout_seconds=entry.get("timeout_seconds"),
                 )
             )
         logger.info("Loaded pipeline %r with %d steps from %s", pipeline_name, len(steps), path)
@@ -162,6 +166,8 @@ class Pipeline:
                     "agent": s.agent_name,
                     "input_map": s.input_map,
                     "depends_on": s.depends_on,
+                    "retries": s.retries,
+                    "timeout_seconds": s.timeout_seconds,
                 }
                 for s in self._steps.values()
             ],
