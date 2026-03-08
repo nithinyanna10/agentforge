@@ -378,11 +378,11 @@ def serve(
 
 @app.command()
 def tools() -> None:
-    """List all available tools."""
+    """List all available tools (built-in and registered extensions)."""
 
-    from agentforge.tools import Tool  # type: ignore[import-untyped]
+    from agentforge.ext import get_registered_tools
 
-    registry: list[type[Tool]] = Tool.registry()  # type: ignore[attr-defined]
+    registry = get_registered_tools()
 
     table = Table(
         title="🧰 Available Tools",
@@ -394,10 +394,17 @@ def tools() -> None:
     table.add_column("Description", style="dim")
     table.add_column("Version", justify="center", style="info")
 
-    for tool_cls in sorted(registry, key=lambda t: t.name):
+    for tool_cls in sorted(registry, key=lambda t: t.__name__):
+        try:
+            inst = tool_cls()
+            name = inst.name
+            desc = inst.description
+        except Exception:
+            name = getattr(tool_cls, "__name__", "Tool")
+            desc = "Custom or configured tool (init requires arguments)"
         table.add_row(
-            tool_cls.name,
-            tool_cls.description,
+            name,
+            desc[:80] + "…" if len(desc) > 80 else desc,
             getattr(tool_cls, "version", "—"),
         )
 
