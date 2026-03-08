@@ -1,0 +1,28 @@
+# Research and report workflow: research -> write -> review
+name: research_report
+description: Research a topic, draft a report, then review for quality
+
+steps:
+  - name: research
+    agent: researcher
+    input_map: {}
+    depends_on: []
+    retries: 1
+    timeout_seconds: 120
+  - name: write
+    agent: writer
+    input_map:
+      findings: research
+      task: __task__
+    depends_on:
+      - research
+    retries: 0
+    timeout_seconds: 90
+  - name: review
+    agent: reviewer
+    input_map:
+      draft: write
+    depends_on:
+      - write
+    retries: 0
+    timeout_seconds: 60

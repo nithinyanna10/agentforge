@@ -1,0 +1,24 @@
+# Generic multi-step pipeline — customize agents and dependencies
+name: multi_step
+description: Step A -> Step B -> Step C with configurable agents
+
+steps:
+  - name: step_a
+    agent: researcher
+    input_map: {}
+    depends_on: []
+    retries: 0
+  - name: step_b
+    agent: writer
+    input_map:
+      context_a: step_a
+    depends_on:
+      - step_a
+    retries: 0
+  - name: step_c
+    agent: reviewer
+    input_map:
+      context_b: step_b
+    depends_on:
+      - step_b
+    retries: 0

@@ -1,0 +1,20 @@
+# Code generation and review workflow
+name: code_review
+description: Generate code with a coder agent, then review with a reviewer
+
+steps:
+  - name: implement
+    agent: coder
+    input_map: {}
+    depends_on: []
+    retries: 1
+    timeout_seconds: 180
+  - name: review
+    agent: reviewer
+    input_map:
+      code: implement
+      task: __task__
+    depends_on:
+      - implement
+    retries: 0
+    timeout_seconds: 60
