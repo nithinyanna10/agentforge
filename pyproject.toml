@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "agentforge"
-version = "0.1.0"
+version = "0.2.0"
 description = "A production-ready multi-agent orchestration framework for building AI-powered automation pipelines"
 readme = "README.md"
 license = { text = "MIT" }
@@ -28,6 +28,7 @@ dependencies = [
     "anthropic>=0.42.0",
     "httpx>=0.28.0",
     "pydantic>=2.10.0",
+    "pydantic-settings>=2.0.0",
     "rich>=13.9.0",
     "typer>=0.15.0",
     "fastapi>=0.115.0",
