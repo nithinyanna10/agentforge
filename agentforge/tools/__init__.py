@@ -7,6 +7,9 @@ from agentforge.tools.sql_query import SqlQueryTool
 from agentforge.tools.shell_command import ShellCommandTool
 from agentforge.tools.datetime_tool import DateTimeTool
 from agentforge.tools.math_expression import MathExpressionTool
+from agentforge.tools.github_tool import GitHubTool
+from agentforge.tools.document_reader import DocumentReaderTool
+from agentforge.tools.image_gen import ImageGenTool
 
 __all__ = [
     "Tool",
@@ -20,4 +23,7 @@ __all__ = [
     "ShellCommandTool",
     "DateTimeTool",
     "MathExpressionTool",
+    "GitHubTool",
+    "DocumentReaderTool",
+    "ImageGenTool",
 ]
