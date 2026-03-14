@@ -1,0 +1,26 @@
+# Summarize document pipeline — fetch URL -> summarize -> optional review
+name: summarize_doc
+description: Fetch a URL, summarize content, optionally review the summary
+
+steps:
+  - name: fetch
+    agent: researcher
+    input_map:
+      task: __task__
+    depends_on: []
+    retries: 1
+    timeout_seconds: 60
+  - name: summarize
+    agent: writer
+    input_map:
+      context: fetch
+    depends_on:
+      - fetch
+    retries: 0
+  - name: review
+    agent: reviewer
+    input_map:
+      context: summarize
+    depends_on:
+      - summarize
+    retries: 0
