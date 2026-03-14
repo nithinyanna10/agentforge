@@ -342,7 +342,6 @@ Contributions are welcome! Here's how to get started:
 4. **Ensure** all checks pass: `ruff check . && pytest`
 5. **Submit** a pull request
 
-Please follow the existing code style (enforced by Ruff) and include tests for new functionality.
 
 ---
 
