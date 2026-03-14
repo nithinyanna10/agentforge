@@ -1,0 +1,24 @@
+# Q&A chain — research question -> answer -> fact-check
+name: qa_chain
+description: Research a question, produce an answer, then fact-check key claims
+
+steps:
+  - name: research
+    agent: researcher
+    input_map: {}
+    depends_on: []
+    retries: 1
+  - name: answer
+    agent: writer
+    input_map:
+      context: research
+    depends_on:
+      - research
+    retries: 0
+  - name: fact_check
+    agent: reviewer
+    input_map:
+      context: answer
+    depends_on:
+      - answer
+    retries: 0
