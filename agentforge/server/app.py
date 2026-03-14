@@ -11,6 +11,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
 from agentforge.server.routes import router
+from agentforge.server.routes_advanced import router as advanced_router
 
 logger = logging.getLogger("agentforge.server")
 
@@ -23,8 +24,16 @@ logger = logging.getLogger("agentforge.server")
 async def lifespan(application: FastAPI) -> AsyncGenerator[None, None]:
     """Startup / shutdown hooks for the FastAPI application."""
     logger.info("AgentForge server starting up …")
-    # Warm up any shared resources (connection pools, model caches, etc.)
     application.state.ready = True
+    run_store = None
+    try:
+        from agentforge.core.run_store import RunStore
+        import os
+        db_path = os.environ.get("AGENTFORGE_RUN_STORE_PATH", "agentforge_runs.db")
+        run_store = RunStore(db_path=db_path)
+    except Exception as e:
+        logger.debug("RunStore not available: %s", e)
+    application.state.run_store = run_store
     yield
     logger.info("AgentForge server shutting down …")
     application.state.ready = False
@@ -56,6 +65,7 @@ def create_app() -> FastAPI:
     )
 
     application.include_router(router)
+    application.include_router(advanced_router)  # readyz, metrics, config, runs
 
     # -----------------------------------------------------------------------
     # WebSocket — stream agent execution in real-time
