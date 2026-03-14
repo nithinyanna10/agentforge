@@ -47,6 +47,15 @@ from agentforge.tools import (
     GitHubTool,
     DocumentReaderTool,
     ImageGenTool,
+    SummarizeTool,
+    FetchURLTool,
+    JSONPathTool,
+    RegexTool,
+    EnvTool,
+    HashTool,
+    YamlTool,
+    DiffTool,
+    ChunkTool,
 )
 
 for _tool_cls in (
@@ -61,6 +70,15 @@ for _tool_cls in (
     GitHubTool,
     DocumentReaderTool,
     ImageGenTool,
+    SummarizeTool,
+    FetchURLTool,
+    JSONPathTool,
+    RegexTool,
+    EnvTool,
+    HashTool,
+    YamlTool,
+    DiffTool,
+    ChunkTool,
 ):
     register_tool(_tool_cls)
 discover_plugins()
