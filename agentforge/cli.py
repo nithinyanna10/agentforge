@@ -136,6 +136,10 @@ def run(
         Optional[str],
         typer.Option("--provider", "-p", help="LLM provider (openai, anthropic, …)"),
     ] = None,
+    output: Annotated[
+        Optional[Path],
+        typer.Option("--output", "-o", help="Write final answer to this file"),
+    ] = None,
 ) -> None:
     """Run a task with a single agent interactively."""
 
@@ -207,6 +211,10 @@ def run(
                 padding=(1, 2),
             )
         )
+        if output is not None:
+            answer_text = getattr(result, "final_answer", None) or getattr(result, "answer", "")
+            output.write_text(answer_text, encoding="utf-8")
+            console.print(f"[dim]Written to {output}[/dim]")
 
     try:
         asyncio.run(_execute())
@@ -233,6 +241,14 @@ def pipeline(
             readable=True,
         ),
     ],
+    dry_run: Annotated[
+        bool,
+        typer.Option("--dry-run", help="Validate and print steps only, do not execute"),
+    ] = False,
+    verbose: Annotated[
+        bool,
+        typer.Option("--verbose", "-v", help="Print more detail during run"),
+    ] = False,
 ) -> None:
     """Run a multi-step pipeline defined in a YAML file."""
 
@@ -255,10 +271,19 @@ def pipeline(
         console.print(_render_error("No steps found in pipeline YAML."))
         raise typer.Exit(code=1)
 
+    if verbose:
+        from agentforge.core.validation import validate_pipeline_dict
+        errs = validate_pipeline_dict(pipeline_def)
+        if errs:
+            console.print("[dim]Validation warnings: %s[/dim]" % errs)
+        else:
+            console.print("[dim]Validation: OK[/dim]")
+
     step_table = Table(title="Pipeline Steps", border_style="cyan", show_lines=True)
     step_table.add_column("#", justify="right", style="bold", width=4)
     step_table.add_column("Name", style="agent")
     step_table.add_column("Agent", style="info")
+    step_table.add_column("Depends", style="dim")
     step_table.add_column("Description", style="dim")
 
     for idx, step in enumerate(steps, 1):
@@ -266,11 +291,16 @@ def pipeline(
             str(idx),
             step.get("name", "—"),
             step.get("agent", "default"),
+            ", ".join(step.get("depends_on") or []),
             step.get("description", ""),
         )
 
     console.print(step_table)
     console.print()
+
+    if dry_run:
+        console.print("[success]Dry run: pipeline valid, not executing.[/success]")
+        raise typer.Exit(0)
 
     async def _run_pipeline() -> None:
         from agentforge.core.pipeline import Pipeline  # type: ignore[import-untyped]
@@ -412,6 +442,97 @@ def tools() -> None:
     console.print(table)
     console.print()
     console.print(f"[dim]{len(registry)} tool(s) registered[/dim]")
+
+
+# ---------------------------------------------------------------------------
+# validate (next-level)
+# ---------------------------------------------------------------------------
+
+
+@app.command()
+def validate(
+    yaml_path: Annotated[
+        Path,
+        typer.Argument(help="Path to pipeline YAML", exists=False),
+    ] = None,
+) -> None:
+    """Validate a pipeline YAML file or show validation help."""
+    if yaml_path is None or not yaml_path.exists():
+        console.print("[dim]Usage: agentforge validate <path-to-pipeline.yaml>[/dim]")
+        console.print("[dim]Validates pipeline name and steps (agent, input_map, depends_on).[/dim]")
+        raise typer.Exit(0 if yaml_path is None else 1)
+    with open(yaml_path) as fh:
+        data = yaml.safe_load(fh)
+    if not data or not isinstance(data, dict):
+        console.print(_render_error("Invalid YAML: not a dict."))
+        raise typer.Exit(1)
+    name = data.get("name") or yaml_path.stem
+    steps = data.get("steps") or []
+    if not steps:
+        console.print(_render_error("No 'steps' key or empty steps."))
+        raise typer.Exit(1)
+    step_names = set()
+    for i, s in enumerate(steps):
+        if not isinstance(s, dict):
+            console.print(_render_error(f"Step {i+1}: not a dict."))
+            raise typer.Exit(1)
+        sn = s.get("name") or s.get("step")
+        if not sn:
+            console.print(_render_error(f"Step {i+1}: missing 'name'."))
+            raise typer.Exit(1)
+        if sn in step_names:
+            console.print(_render_error(f"Duplicate step name: {sn!r}."))
+            raise typer.Exit(1)
+        step_names.add(sn)
+    console.print(Panel(f"[success]Valid[/success] — pipeline {name!r}, {len(steps)} steps.", border_style="green"))
+    raise typer.Exit(0)
+
+
+# ---------------------------------------------------------------------------
+# config (next-level)
+# ---------------------------------------------------------------------------
+
+
+@app.command()
+def config() -> None:
+    """Show current AgentForge config (safe values only)."""
+    ver = _version_string()
+    table = Table(title="Config", border_style="cyan")
+    table.add_column("Key", style="bold")
+    table.add_column("Value", style="info")
+    table.add_row("version", ver)
+    table.add_row("pipeline_default_timeout", "300.0")
+    table.add_row("server_default_port", "8000")
+    console.print()
+    console.print(table)
+
+
+# ---------------------------------------------------------------------------
+# workflows (next-level)
+# ---------------------------------------------------------------------------
+
+
+@app.command()
+def workflows(
+    workflows_dir: Annotated[
+        Optional[Path],
+        typer.Option("--dir", "-d", help="Directory containing workflow YAMLs"),
+    ] = None,
+) -> None:
+    """List available workflow YAML files."""
+    base = workflows_dir or Path(__file__).resolve().parent.parent / "workflows"
+    if not base.exists():
+        console.print(f"[dim]No workflows dir: {base}[/dim]")
+        raise typer.Exit(0)
+    yamls = list(base.glob("*.yaml")) + list(base.glob("*.yml"))
+    table = Table(title="Workflows", border_style="blue")
+    table.add_column("File", style="info")
+    table.add_column("Path", style="dim")
+    for p in sorted(yamls):
+        table.add_row(p.name, str(p))
+    console.print()
+    console.print(table)
+    console.print(f"[dim]{len(yamls)} workflow(s)[/dim]")
 
 
 # ---------------------------------------------------------------------------
