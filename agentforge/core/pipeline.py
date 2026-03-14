@@ -156,6 +156,29 @@ class Pipeline:
         logger.info("Loaded pipeline %r with %d steps from %s", pipeline_name, len(steps), path)
         return cls(name=pipeline_name, steps=steps)
 
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> Pipeline:
+        """Load a pipeline from a dict (e.g. from YAML). Supports condition_expr per step."""
+        from agentforge.core.pipeline_conditions import compile_condition
+        pipeline_name = data.get("name", "pipeline")
+        steps = []
+        for entry in data.get("steps", []):
+            cond = None
+            if "condition_expr" in entry and entry["condition_expr"]:
+                cond = compile_condition(str(entry["condition_expr"]))
+            steps.append(
+                PipelineStep(
+                    name=entry["name"],
+                    agent_name=entry.get("agent", entry.get("agent_name", "")),
+                    input_map=entry.get("input_map", {}),
+                    depends_on=entry.get("depends_on", []),
+                    retries=entry.get("retries", 0),
+                    timeout_seconds=entry.get("timeout_seconds"),
+                    condition=cond,
+                )
+            )
+        return cls(name=pipeline_name, steps=steps)
+
     def to_dict(self) -> dict[str, Any]:
         """Serialise the pipeline to a plain dict (suitable for JSON/YAML)."""
         return {
