@@ -19,6 +19,14 @@ from agentforge.tools.hash_tool import HashTool
 from agentforge.tools.yaml_tool import YamlTool
 from agentforge.tools.diff_tool import DiffTool
 from agentforge.tools.chunk_tool import ChunkTool
+from agentforge.tools.template_tool import TemplateTool
+from agentforge.tools.csv_tool import CsvTool
+from agentforge.tools.xml_tool import XmlTool
+from agentforge.tools.encoding_tool import EncodingTool
+from agentforge.tools.uuid_tool import UuidTool
+from agentforge.tools.chrono_tool import ChronoTool
+from agentforge.tools.json_schema_tool import JsonSchemaTool
+from agentforge.tools.text_structure_tool import TextStructureTool
 
 __all__ = [
     "Tool",
@@ -44,4 +52,12 @@ __all__ = [
     "YamlTool",
     "DiffTool",
     "ChunkTool",
+    "TemplateTool",
+    "CsvTool",
+    "XmlTool",
+    "EncodingTool",
+    "UuidTool",
+    "ChronoTool",
+    "JsonSchemaTool",
+    "TextStructureTool",
 ]
