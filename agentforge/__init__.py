@@ -18,6 +18,16 @@ from agentforge.core.evaluator import Evaluator, EvalResult, EvalCriterion, Eval
 from agentforge.core.planner import Planner, TaskPlan, SubTask, PlanExecutionResult
 from agentforge.core.supervisor import Supervisor, SupervisorConfig, SupervisorResult
 from agentforge.core.reflection import ReflectionAgent, ReflectionConfig, ReflectionResult
+from agentforge.core.artifact_store import (
+    ArtifactStore,
+    ArtifactMeta,
+    StoredArtifact,
+    InMemoryArtifactStore,
+    FileArtifactStore,
+    put_json,
+    get_json,
+    open_default_artifact_store,
+)
 from agentforge.ext import (
     get_registered_tools,
     get_agent_factory,
@@ -56,6 +66,14 @@ from agentforge.tools import (
     YamlTool,
     DiffTool,
     ChunkTool,
+    TemplateTool,
+    CsvTool,
+    XmlTool,
+    EncodingTool,
+    UuidTool,
+    ChronoTool,
+    JsonSchemaTool,
+    TextStructureTool,
 )
 
 for _tool_cls in (
@@ -79,6 +97,14 @@ for _tool_cls in (
     YamlTool,
     DiffTool,
     ChunkTool,
+    TemplateTool,
+    CsvTool,
+    XmlTool,
+    EncodingTool,
+    UuidTool,
+    ChronoTool,
+    JsonSchemaTool,
+    TextStructureTool,
 ):
     register_tool(_tool_cls)
 discover_plugins()
@@ -117,6 +143,14 @@ __all__ = [
     "ReflectionAgent",
     "ReflectionConfig",
     "ReflectionResult",
+    "ArtifactStore",
+    "ArtifactMeta",
+    "StoredArtifact",
+    "InMemoryArtifactStore",
+    "FileArtifactStore",
+    "put_json",
+    "get_json",
+    "open_default_artifact_store",
     "create_researcher",
     "create_coder",
     "create_writer",
