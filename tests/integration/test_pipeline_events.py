@@ -90,7 +90,8 @@ class TestMiddlewareHelpers:
         ctx = {"a": "short", "b": long_str}
         out = await truncate_context_middleware("s", ctx, max_value_chars=100)
         assert out["a"] == "short"
-        assert len(out["b"]) <= 110
+        # max_value_chars content plus ellipsis suffix "… [truncated]"
+        assert len(out["b"]) <= 100 + len("… [truncated]")
         assert "truncated" in out["b"] or "…" in out["b"]
 
 
